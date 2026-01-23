@@ -1,4 +1,9 @@
-Ideographic Description Sequences (IDS) for CJK Unified Ideographs
+Title: Specification document for the IDS.TXT file
+Original Author: Andrew West (魏安) <babelstone@gmail.com> (deceased)
+Maintained by: Ryusei Yamaguchi <mandel59@gmail.com>
+Description: This text file contains the introductory description that appears
+	at the beginning of the IDS.TXT file.
+---
 
 Caveat Lector
 	Please be aware that IDS sequences do not describe absolute glyph forms, but describe glyph forms in the context of
