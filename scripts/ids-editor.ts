@@ -822,12 +822,14 @@ function renderHtml() {
     let activeErrors = [];
     let activeServerErrors = [];
     const pendingServerIssues = new Map();
-    let updateTimer = null;
+    const draftByIndex = new Map();
+    const updateTimerByIndex = new Map();
+    let openToken = 0;
     let lastSavedAtMs = null;
-	    let serverDirty = false;
-	    let metaPollTimer = null;
-	    let activePos = null;
-	    let posByIndex = new Map();
+    let serverDirty = false;
+    let metaPollTimer = null;
+    let activePos = null;
+    let posByIndex = new Map();
     let searchTimer = null;
     let searchToken = 0;
     let searchTruncated = false;
@@ -914,7 +916,7 @@ function renderHtml() {
       return data;
     }
 
-    function ingestServerIssues(issues){
+    function ingestServerIssues(issues, fallbackIndex){
       const byIndex = new Map();
       let firstIndex = null;
       for(const it of (issues ?? [])){
@@ -929,8 +931,8 @@ function renderHtml() {
           if(firstIndex == null) firstIndex = idx;
         } else {
           // record-local issues (e.g. /api/record/:id)
-          if(activeIndex != null){
-            const idx = activeIndex;
+          if(fallbackIndex != null){
+            const idx = fallbackIndex;
             if(!byIndex.has(idx)) byIndex.set(idx, []);
             byIndex.get(idx).push({path, message});
             if(firstIndex == null) firstIndex = idx;
@@ -1085,6 +1087,12 @@ function renderHtml() {
     }
 
     async function openRecord(index){
+      // Stash current record even if invalid / not sent to server yet.
+      if(activeIndex != null && activeRecord){
+        try{ draftByIndex.set(activeIndex, structuredClone(activeRecord)); } catch { draftByIndex.set(activeIndex, JSON.parse(JSON.stringify(activeRecord))); }
+      }
+
+      const myToken = ++openToken;
       activeIndex = index;
       activePos = posByIndex.get(index) ?? null;
       elCurIndex.textContent = \`#\${index}\`;
@@ -1093,8 +1101,15 @@ function renderHtml() {
 
       setStatus('neutral', 'Loading...');
       try{
-        const data = await apiGet('/api/record/' + index);
-        activeRecord = structuredClone(data.record);
+        const draft = draftByIndex.get(index);
+        if(draft){
+          activeRecord = structuredClone(draft);
+        } else {
+          const data = await apiGet('/api/record/' + index);
+          if(myToken !== openToken) return;
+          activeRecord = structuredClone(data.record);
+        }
+
         activeServerErrors = pendingServerIssues.get(index) ?? [];
         pendingServerIssues.delete(index);
         activeErrors = validateRecord(activeRecord);
@@ -1277,30 +1292,46 @@ function renderHtml() {
 
     function scheduleUpdate(){
       if(activeIndex == null || !activeRecord) return;
-      if(updateTimer) clearTimeout(updateTimer);
-      updateTimer = setTimeout(async () => {
-        updateTimer = null;
+      const index = activeIndex;
+      // Always keep a draft so invalid input doesn't get lost when switching records.
+      try{ draftByIndex.set(index, structuredClone(activeRecord)); } catch { draftByIndex.set(index, JSON.parse(JSON.stringify(activeRecord))); }
+
+      const prev = updateTimerByIndex.get(index);
+      if(prev) clearTimeout(prev);
+
+      const timer = setTimeout(async () => {
+        updateTimerByIndex.delete(index);
+        const rec = draftByIndex.get(index);
+        if(!rec) return;
         // Do not send invalid records.
-        const issues = validateRecord(activeRecord);
+        const issues = validateRecord(rec);
         if(issues.length) return;
         try{
-          await apiPost('/api/record/' + activeIndex, {record: activeRecord});
-          activeServerErrors = [];
+          await apiPost('/api/record/' + index, {record: rec});
+          pendingServerIssues.delete(index);
+          if(index === activeIndex){
+            activeServerErrors = [];
+          }
           serverDirty = true;
           updateStatusFromErrors();
         } catch(e){
           const srvIssues = e?.data?.issues;
           if(Array.isArray(srvIssues)){
-            const ing = ingestServerIssues(srvIssues);
-            const list = ing.byIndex.get(activeIndex) ?? [];
-            activeServerErrors = list;
-            rerenderErrorsOnly();
+            const ing = ingestServerIssues(srvIssues, index);
+            const list = ing.byIndex.get(index) ?? [];
+            pendingServerIssues.set(index, list);
+            if(index === activeIndex){
+              activeServerErrors = list;
+              rerenderErrorsOnly();
+            }
             setStatus('warn', 'Validation failed (highlighted).');
           } else {
             setStatus('warn', String(e?.message ?? e));
           }
         }
       }, 250);
+
+      updateTimerByIndex.set(index, timer);
     }
 
     elSaveBtn.addEventListener('click', async () => {
@@ -1316,7 +1347,7 @@ function renderHtml() {
         console.error(e);
         const srvIssues = e?.data?.issues;
         if(Array.isArray(srvIssues)){
-          const ing = ingestServerIssues(srvIssues);
+          const ing = ingestServerIssues(srvIssues, activeIndex);
           for(const [idx, list] of ing.byIndex.entries()){
             pendingServerIssues.set(idx, list);
           }
