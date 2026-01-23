@@ -8,6 +8,8 @@
 // Usage:
 //   bun run scripts/ids-editor.ts <ids-file> [--port <port>]
 
+import { validateIdsExpression, validateSourceTag } from "./ids-validate-lib.js";
+
 type IDSItem = { ids: string; source: string };
 type IDSRecord = { codepoint: string; char: string; data: IDSItem[]; comment?: string };
 type RecordFlags = { isEmpty: boolean; issueCount: number };
@@ -211,17 +213,14 @@ function validateRecord(rec: IDSRecord): ValidationIssue[] {
     for (let i = 0; i < rec.data.length; i++) {
         const item = rec.data[i];
         if (item == null) continue;
-        const ids = item.ids ?? "";
-        const source = item.source ?? "";
+        const ids = String(item.ids ?? "");
+        const source = String(item.source ?? "");
 
-        if (ids.trim() === "") issues.push({ path: `data[${i}].ids`, message: "IDS must not be empty." });
-        if (source.trim() === "") issues.push({ path: `data[${i}].source`, message: "Source must not be empty." });
-        if (/[\\t\\r\\n]/.test(ids)) issues.push({ path: `data[${i}].ids`, message: "IDS must not contain tabs/newlines." });
-        if (/[\\t\\r\\n]/.test(source)) issues.push({ path: `data[${i}].source`, message: "Source must not contain tabs/newlines." });
-        if (ids.includes("$") || ids.includes("^")) issues.push({ path: `data[${i}].ids`, message: "IDS must not contain '^' or '$'." });
-        if (source.includes("(") || source.includes(")") || source.includes("$")) {
-            issues.push({ path: `data[${i}].source`, message: "Source must not contain '(', ')', or '$'." });
-        }
+        const idsRes = validateIdsExpression(ids);
+        if (!idsRes.ok) issues.push({ path: `data[${i}].ids`, message: idsRes.issues[0]?.message ?? "Invalid IDS." });
+
+        const srcRes = validateSourceTag(source);
+        if (!srcRes.ok) issues.push({ path: `data[${i}].source`, message: srcRes.issues[0]?.message ?? "Invalid source." });
     }
 
     const comment = rec.comment ?? "";
@@ -284,6 +283,15 @@ async function route(req: Request, state: DocumentState): Promise<Response> {
                     hasError: flags.issueCount > 0,
                 };
             }),
+        });
+    }
+
+    if (req.method === "GET" && path === "/assets/ids-validate.js") {
+        return new Response(Bun.file(new URL("./ids-validate-lib.js", import.meta.url)), {
+            headers: {
+                "content-type": "text/javascript; charset=utf-8",
+                "cache-control": "no-store",
+            },
         });
     }
 
@@ -770,7 +778,9 @@ function renderHtml() {
     </main>
   </div>
 
-  <script>
+  <script type="module">
+    import { validateIdsExpression, validateSourceTag } from '/assets/ids-validate.js';
+
     const qs = (s) => document.querySelector(s);
     const elMeta = qs('#meta');
     const elCount = qs('#count');
@@ -940,19 +950,19 @@ function renderHtml() {
 	      const issues = [];
 	      for(let i=0;i<rec.data.length;i++){
 	        const d = rec.data[i] || {ids:'',source:''};
-        const ids = String(d.ids ?? '');
-        const src = String(d.source ?? '');
-        if(ids.trim()==='') issues.push({path:\`data[\${i}].ids\`, message:'IDS must not be empty.'});
-        if(src.trim()==='') issues.push({path:\`data[\${i}].source\`, message:'Source must not be empty.'});
-        if(/[\\t\\r\\n]/.test(ids)) issues.push({path:\`data[\${i}].ids\`, message:'IDS must not contain tabs/newlines.'});
-        if(/[\\t\\r\\n]/.test(src)) issues.push({path:\`data[\${i}].source\`, message:'Source must not contain tabs/newlines.'});
-        if(ids.includes('$') || ids.includes('^')) issues.push({path:\`data[\${i}].ids\`, message:\"IDS must not contain '^' or '$'.\"});
-        if(src.includes('(') || src.includes(')') || src.includes('$')) issues.push({path:\`data[\${i}].source\`, message:\"Source must not contain '(', ')', or '$'.\"});
-      }
-      const c = String(rec.comment ?? '');
-      if(/\\t/.test(c)) issues.push({path:'comment', message:'Comment must not contain tabs.'});
-      return issues;
-    }
+	        const ids = String(d.ids ?? '');
+	        const src = String(d.source ?? '');
+
+	        const idsRes = validateIdsExpression(ids);
+	        if(!idsRes.ok) issues.push({path:\`data[\${i}].ids\`, message: idsRes.issues?.[0]?.message ?? 'Invalid IDS.'});
+
+	        const srcRes = validateSourceTag(src);
+	        if(!srcRes.ok) issues.push({path:\`data[\${i}].source\`, message: srcRes.issues?.[0]?.message ?? 'Invalid source.'});
+	      }
+	      const c = String(rec.comment ?? '');
+	      if(/\\t/.test(c)) issues.push({path:'comment', message:'Comment must not contain tabs.'});
+	      return issues;
+	    }
 
 	    function applyFilter(){
 	      const term = elFilter.value.trim();
