@@ -1,0 +1,314 @@
+Ideographic Description Sequences (IDS) for CJK Unified Ideographs
+
+Caveat Lector
+	Please be aware that IDS sequences do not describe absolute glyph forms, but describe glyph forms in the context of
+	the region where a character is used, and many IDS components correspond to more than one region-dependent glyph form;
+	so a single IDS sequence for a character may reflect multiple actual glyph forms, and conversely,
+	different IDS sequence for the same character may reflect the same actual glyph form.
+
+	Therefore, what you may imagine a character's glyph should look like, based on its IDS structure, is often dependent
+	on the font or fonts you are using to view this file, as different fonts may represent the same IDS component with
+	different glyph forms, depending on what region the particular font is designed for.
+
+Note on the new Japanese source references in Unicode 16.0
+	Unicode 16.0 adds 36,412 new Japanese source references for Moji Jōhō Kiban 文字情報基盤 (JMJ), all of the glyphs for
+	which need to have their IDS checked and verified, which is a massive task. The IDS checking of the new JMJ glyph forms
+	has not yet been completed, so the current version of this IDS file does not reference any of the new JMJ source references.
+	There are still 3,205 JMJ glyphs left to check, and I hope to complete this for the Unicode 17.0 release at the latest.
+
+Documentation
+
+1. This file is based on IDS data provided by Kawabata Taichi <https://github.com/kawabata/ids>, John Knightley,
+	and Andrew West, and from data provided in encoding submissions by IRG member bodies. However, the format of this
+	file was designed by myself, and the file does not reproduce the format or presentation form of any pre-existing IDS
+	data sources. I (Andrew West) have edited the original raw IDS data to conform to the format used in this file, and
+	have made a very large number of changes and corrections to the original data. My thanks to Eiso Chan (陈永聪), James
+	Kass, Huáng Jùnliàng (黄俊亮), Jaemin Chung, and Jerry You (游程宇) for providing numerous corrections and improvements
+	to the data; and my especial thanks to Michel Mariani who has provided thousands of corrections and improvements which
+	have immeasurably improved the quality of the IDS data.
+
+2. Under U.S. copyright law, data (i.e. a collection of facts) is not eligible to copyright protection (see
+	<https://sco.library.emory.edu/research-data-management/publishing/copyright-data.html>), and as IDS descriptions
+	for CJK ideographs are facts not original creative compositions, IDS sequences in themselves are not eligible for
+	copyright protection (that is to say, you could no more copyright 彼 = ⿰彳皮 than you could copyright 1 + 1 = 2).
+	Therefore, anyone is free to make use of the IDS data provided in this file for personal or commercial purposes
+	without asking permission or providing attribution. I furthermore waive any copyright claims to the presentation
+	format of the IDS data used in this file, so anyone is free to fork the file, or use it as the basis for a new IDS
+	data set.
+
+3. This version of the file provides IDS sequences for the 97,058 CJK unified ideographs defined in Unicode version
+	15.1 (released on 12 September 2023), covering unified ideographs in the main CJK Unified Ideographs block (URO), the
+	CJK Compatibility Ideographs block (12 characters only), and CJK Unified Ideographs Extensions A through I. This file
+	does not define IDS sequences for any CJK compatibility ideographs. IDS sequences for unencoded characters present in
+	the BabelStone Han PUA font are available at <https://babelstone.co.uk/CJK/IDS_PUA.TXT>.
+
+4. IDS sequences start with ^ and end with $. Some characters have more than one tab-separated IDS sequence,
+	corresponding to different source forms of the character, as described below.
+
+5. IDS sequences on this page use only the following characters:
+	CJK Unified Ideographs (no CJK Compatibility Ideographs are used)
+	CJK Strokes (only where there is no corresponding CJK unified ideograph)
+	CJK Radicals Supplement (only if there is no corresponding CJK unified ideograph)
+	？ (fullwidth question mark) indicating an unrepresentable component
+	Ideographic Description Characters indicating relative placement (⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿼⿽)
+	⿻ = Overlay operator (binary): indicates that the two components overlay each other. As the relative positioning of
+		the overlay is unspecified, this operator may be ambiguous.
+	㇯ = Subtraction operator (binary): indicates that the stroke or component represented by the second operand is removed
+		from the character represented by the first operand, for example ㇯東㇒ = 𬻌. This is effectively the opposite of the
+		overlay operator (⿻), and like the overlay operator it may be ambiguous (e.g. ㇯心丶 for 𢖩 does not specify which of
+		the two dots is removed from 心).
+	⿾ = Mirror operator (unary): the operand is mirrored horizontally (e.g. ⿰⿾臣臣 = 臦).
+	⿿ = Rotation operator (unary): the operand is rotated 180° (e.g. ⿿了 = 𠄏).
+	〾 (Ideographic Variation Indicator): placed at the begining of an IDS sequence to indicate that one or more of the IDS
+		components differ in some unspecified minor way from the actual shape of the component given.
+	0..9 in curly brackets {} representing unencoded components (see below).
+
+6. Unencoded Components are represented as a number between curly brackets (the corresponding PUA character
+	in the "BabelStone Han PUA" font is given in parentheses). To create an IDS set with no numbered components, globally
+	replace all numbered components with the IDS fragments given in the final column below (some components are replaced
+	with approximate equivalents).
+
+	{1}	bottom of 廌焉舃 (F2A5 )	⿹⿺㇉一灬
+	{2}	top of 免象 (F0CF )	⿱⺈𫩏
+	{3}	top of 夐 (F2A7 )	⿱⺈⿵冂人
+	{4}	top of 䝉𫎇 (F313 )	⿱⿻⿰丨丨丷冖
+	{5}	left of 叚 (F2A9 )	？
+	{6}	left of 段 (F2AA )	？
+	{7}	top of 專惠 (F4F3 )	？
+	{8}	right of 扥 (F2AB )	⿻⿱㇒一乚
+	{9}	right of 𪟳𪝪 (F2AC )	⿱⿰㇒㇖丨
+	{10}	right of 巩 [T source glyph] (F2A8 )	⿻⿻㇈丿丶
+	{11}	bottom of 軣 (F2AD )	⿰⿱丶㇀⿱㇒丶
+	{12}	right of 龍 (F2AE )	？
+	{13}	outside of 虍 (F29F )	⿸⿰丿⿱⺊⺂七
+	{14}	top of 𡕡 (F2B0 )	？
+	{15}	bottom-right of 旅 (F2B1 )	⿻𱍸㇒
+	{16}	bottom of 鼠 (F31A )	⿲⿺𠄌⺀⿺𠄌⺀㇂
+	{17}	left of 剆 [G source glyph] (F2B3 )	？
+	{18}	left of 即 (F2B4 )	？
+	{19}	right of 㤤 (F2B5 )	？
+	{20}	right of 執 [G source glyph] (F5EE )	丸
+	{21}	top of 祭豋 (F101 )	？
+	{22}	outside of 与 (F2E6 )	⿺㇉一
+	{23}	inside of 與 (F2E9 )	？
+	{24}	right of 水 (F2F2 )	？
+	{25}	bottom (legs) of 喪 (F2F4 )	？
+	{26}	top of 韲 (F2BA )	？
+	{27}	bottom of 𤣥 (F2BB )	？
+	{28}	outside of 武貮 (F2BC )	⿻弋一
+	{29}	outside of 幾畿 (F2BD )	⿻弋𢆶
+	{30}	top of 彔 (F2F5 )	？
+	{31}	bottom of 卥 (F2BF )	⿴囗⿻𰀪丶
+	{32}	top of 𣓝 (F5FD )	⿱⿻𠮛⿰丨丨冖
+	{33}	bottom of 雋 (F2C1 )	？
+	{34}	bottom of 䇖 (F2B2 )	⿹勹丿
+	{35}	right of 𠖵 (F2C3 )	⿻几𠄠
+	{36}	top of 𠢘㥑 (F2C4 )	
+	{37}	top of 睿 (F2B6 )	⿱⺊冖
+	{38}	top of 橐 (F2B9 )	⿱𰀉冖
+	{39}	left of 卬 (F2C7 )	？
+	{40}	right of 𩤷 (F2C8 )	？
+	{41}	left of 𠜂 [T-form of 𠕋] (F2C6 )	⿻𦉫𠄠
+	{42}	top of 录 (F2D4 )	彐
+	{43}	top of 㚑 (F2A4 )	⺕
+	{44}	top of 孛 (F2C9 )	⿱十冖
+	{45}	left of 北 [G source glyph] (F5FB )	？
+	{46}	bottom of 竜 (EC30 )	⿻日乚
+	{47}	outside of 鳥島 (F2CA )	？
+	{48}	bottom of 年 [J-form of 㐄] (F5FC )	㐄
+	{49}	left of 帅 (F2D2 )	⿰丨丿
+	{50}	top right of 叚 (F319 )	？
+	{51}	outside of 馬 (F2CB )	？
+	{52}	outside of 马 (F2E8 )	？
+	{53}	outside of 鸟岛 (F2E7 )	？
+	{54}	outside of 烏 (F2FA )	？
+	{55}	outside of 鹿慶 (F2D0 )	？
+	{56}	top of 無 (F2CF )	？
+	{57}	outside of 在 (F2CE )	？
+	{58}	top left of 留 (F2CD )	⿰{39}丶
+	{59}	bottom of 舄 (F13C )	？
+	{60}	outside of 龜 [H source glyph] (F5F6 )	？
+	{61}	outside of 臧 (F5F0 )	？
+	{62}	bottom of 華 (F13D )	？
+	{63}	
+	{64}	bottom left of 龜 [G source glyph] (F314 )	？
+	{65}	bottom right of 龜 [G source glyph] (F318 )	？
+	{66}	bottom right of 𪚴 (F31B )	？
+	{67}	middle of 髙 and 𠅘 (F2F7 )	⿴⿰丨丨𠄠
+	{68}	top of 黑 (F5F4 )	？
+	{69}	outside of 戠 (F5F5 )	？
+	{70}	inside of 虛 (F2D1 )	？
+	{71}	left of 𦥑 (F5FE )	？
+	{72}	left of 印 [G source glyph] (F5FF )	？
+	{73}	top of 具 (ECE0 )	⿴𠀃三
+	{74}	middle of 鄕 [J source glyph] (ECE1 )	？
+	{75}	bottom left of 爵 [K source glyph] (ECE2 )	？
+	{76}	top of 長 (ECE3 )	？
+	{77}	top of 㒫 (ECE4 )	？
+	{78}	亜 without the top stroke (ECE5 )	⿱⿻口⿰丨丨一
+	{79}	亞 without the top stroke (F5E1 )	？
+	{80}	top of 罙 [G source glyph] (ECE6 )	⿱冖八
+	{81}	inner part of 𮭷 (ECE7 )	？
+	{82}	top of 書 (F2E3 )	⿱𦘒一
+	{83}	top of 帝 (ECE9 )	⿳亠丷冖
+	{84}	厂 with hooked stroke (ECEA )	⿰丿乛
+	{85}	广 with hooked stroke (ECEB )	⿰丿⿱丶乛
+	{86}	first three strokes of 灬 (ECEC )	⿲丶丶丶
+	{87}	top of 亭 (ECED )	⿳亠口冖
+	{88}	top of 合 (ECEE )	⿵𠆢一
+	{89}	outside of 𪚧 (F5F7 )	？
+	{90}	core of 龜 [G source glyph] (F5F8 )	？
+	{91}	core of 黽 (F5F9 )	？
+	{92}	core of 𪚧 (F5FA )	？
+	{93}	right of 縄 (ECEF )	⿻昌乚
+	{94}	top of 其 (ECF0 )	？
+	{95}	bottom of 𢀞 (ECF1 )	⿻尸一
+	{96}	outside of 𭾐 (ECF2 )	？
+	{97}	bottom right of 𮊫 or right of 戠 without horizontal stroke (ECF3 )	？
+	{98}	top of 曹 (F5DE )	⿻一曲
+	{99}	top of 𢘼 (ECF5 )	⿻𦉫𠄠
+	{100}	之 without top stroke (F3BE )	？
+	{101}	left of 癶 (ECF6 )	？
+	{102}	right of 癶 (ECF7 )	？
+	{103}	top right of 祭 (ECF8 )	？
+	{104}	top right of 𥋮 (ECF9 )	？
+	{105}	top right of 𨄛 (ECFA )	？
+	{106}	top of 𡛹 (ECFB )	？
+	{107}	middle of 𡙌 (ECFC )	？
+	{108}	top of 冎 [G source glyph] (ECFD )	？
+	{109}	left of 刋 (ECFE )	⿻⿱㇒一丿
+	{110}	outside of 𭁟 (F29E )	冂
+	{111}	inside of 𭁟 (EF31 )	？
+	{112}	outside of 𦥓 (EF32 )	？
+	{113}	bottom of 𠕉 (EF33 )	⿵冂八
+	{114}	top of 坴 [G source glyph] (EF34 )	⿱土八
+	{115}	top of 𫭣 (EF35 )	⿻𰀪⺀
+	{116}	inside top of 鹿慶 (EF36 )	？
+	{117}	inside of 𠣏 [G source glyph] (EF37 )	⿺𠃊⺊
+	{118}	outside of 𠁅 (ECFF )	？
+	{119}	right of 𥛈 (F2E5 )	⿻己⿱工工
+	{120}	right of 𤛒 without 口 (F2CC )	⿻弓⿱{50}匚
+	{121}	top of 𣬋 (F5DF )	⿱⺈罒
+	{122}	bottom of 宐 (F5E3 )	？
+
+7. The following special radical forms are used:
+	牜 for 牛 (ox) on the left
+	𤣩 for dotless 玉 (jade) on the left
+	𥫗 for 竹 (bamboo) on top (unless actually written as 竹)
+	艹 for 艸 (grass) on top (unless actually written as 艸)
+		joined (3 strokes) and broken (4 strokes) forms are not distinguished
+	糹 for three-dotted 糸 (silk) on the left
+		enables automatic conversion to/from corresponding lhs-only simplified component 纟
+	訁 for 言 (speech) on the left
+		enables automatic conversion to/from corresponding lhs-only simplified component 讠
+	釒 for 金 (gold) on the left
+		enables automatic conversion to/from corresponding lhs-only simplified component 钅
+	飠 for 食 (food) on the left (unless written with the final dot)
+		enables automatic conversion to/from corresponding lhs-only simplified component 饣
+On the other hand, 孑 and ⺶ on the left are normalized to 子 and 羊 respectively.
+
+8. Where source forms of the same character differ at the IDS level, two or more IDS sequences are provided, and the
+	source that the IDS sequence refers to is given in parentheses after the IDS sequence, using the following single
+	letter designations in this order:
+		G = China (G prefix)
+		H = Hong Kong SAR (H prefix)
+		M = Macau SAR (M prefix)
+		T = TCA/Taiwan (T prefix)
+		J = Japan (J prefix)
+		K = ROKorea (K prefix)
+		P = DPRKorea (KP prefix)
+		V = Vietnam (V prefix)
+		U = Unicode (UTC prefix)
+		S = SAT (SAT prefix)
+		B = UK (UK prefix)
+		UCS2003 = UCS2003 glyph for Ext. B in the Unicode 13.0 code chart where significantly different from all source forms
+			NB the UCS2003 glyphs are no longer listed from Unicode 14.0 onwards, but are available at:
+			<https://www.unicode.org/Public/13.0.0/charts/UCS2003.pdf>
+		X = Alternative IDS for same glyph structure
+		Z = Unifiable variant form that is not the same as any source glyph, but is either attested in some external source
+			or is a plausible glyph form.
+
+9. Many components have two or more unified glyph forms, and so the specific glyph form used in any given character
+	may be ambiguous in some cases. Potential ambiguity is avoided where the source separation rule has resulted in the
+	encoding of unifiable characters, so for example U+855D 蕝 can be described as ⿱艹絶 for (G) and ⿱艹絕 for (HTJK) as 絶 and
+	絕 are encoded separately. Where glyph forms of the same character are not seperately encoded the following procedures
+	are used to avoid ambiguity.
+
+A component in an IDS sequence for a particular region represents the actual glyph form of the source form of that
+	component.
+
+	U+5F25 弥 is described as ⿰弓尔 for (G) and ⿰弓尓 for (HTJK). This means that whenever 弥 is used as a component in a (G)
+	IDS it represents ⿰弓尔, but whenever 弥 is used as a component in a (HTJK) IDS it represents ⿰弓尓. Therefore U+3CFD 㳽
+	is described as ⿰氵弥 for (GTK), even though the actual glyph forms for (G) is different from (TK), because 弥 matches
+	the expected source form in each case.
+
+Where the component in an IDS for a particular region does not correspond to the expected source glyph form, the
+	component is decomposed to explicitly show the actual glyph form.
+
+	U+7315 猕 is described as ⿰犭弥 for (G) and ⿰犭⿰弓尔 for (T), even though the actual glyph forms are the same, because the
+	(T) glyph form does not match the expected source form, and so the decomposition of 弥 to ⿰弓尔 needs to be given to
+	indicate the actual glyph form.
+
+Where a component with multiple source glyph forms is used in an IDS for a particular region, but the component is not
+	defined for the particular region, then the component is decomposed to show the actual glyph form, and the ambiguous
+	component is given in a (Z) IDS.
+
+	U+30CC9 𰳉 is described as ⿰虫⿰弓尓 for (S) and ⿰虫弥 for (Z) as there is no (S) form for U+5F25 弥, so ⿰虫弥 would be
+	ambiguous in this case.
+
+Where a character has the same IDS for all defined source forms (NB Z-forms are ignored), then this character can be
+	used as a component in IDS sequences for any region as it will be assumed by default to have the same IDS structure.
+
+	U+5125 儥 is described as ⿰亻𧶠 for (H) even though there is no H form for U+27DA0 𧶠. There is no ambiguity in this case
+	because all defined source forms of U+27DA0 𧶠 (GTK) have the same IDS (⿳士四貝) and so all source forms are assumed by
+	default to have the same IDS for U+27DA0.
+
+Note 1. Virtual glyph forms have been defined in some cases where a particular IRG source uses a consistent form for a
+	particular component which has more than one defined glyph form, but that component does not a have a source reference
+	for that particular IRG source. In such cases, if the glyph form for the IRG source is the same as the defined glyph
+	form for another IRG source, then the missing source designation is given in square brackets in the list of source
+	designations for the corresponding IDS. If the glyph form for the IRG source is not exactly the same as any other
+	defined glyph form, then a new IDS is provided, with the source designation given in square brackets.
+
+	U+6C10 氐 is ⿱氏丶 for (G) and ⿱氏一 for (HTJK), but is undefined for (BSV). As components in other characters, the B and V
+	forms of U+6C10 are normally written as ⿱氏丶, whereas the S form of U+6C10 is normally written as ⿱氏一, so U+6C10 氐 is
+	described as ^⿱氏丶$(G[V][B]) and ^⿱氏一$(HTJKP[S]), indicating that where "氐" occurs as a component in a B or V source
+	character it should be interpreted as ⿱氏丶, and where "氐" occurs as a component in an S source character it should be
+	interpreted as ⿱氏一. There is one V source character (U+25FC4 𥿄) which actually uses the ⿱氏一 form of U+6C10, and in
+	this case the V source IDS gives the decomposed form, i.e. ^⿰糹⿱氏一$(V).
+
+	U+30D4D and U+30E78 are two UK-source characters which both use the 屯 component. However, U+5C6F 屯 is not defined for
+	UK (B), and there are two forms of U+5C6F 屯. Therefore a virtual B-form is defined by adding [B] to the list of source
+	designations for the appropriate IDS, i.e. ^⿻一𡳾$(GHTV[B]).
+
+	Several G- and T-source characters make use of the component ⿱羽𠇍 which corresponds to U+2E2BF. However, only J and S
+	forms of U+2E2BF are defined, and neither form is the same as that used in G and T characters. Therefore a new IDS
+	sequence ^⿱羽𠇍$([G][T]) is added to the entry for U+2E2BF, indicating that in IDS sequences for G and T characters, the
+	component U+2E2BF means ⿱羽𠇍.
+
+Note 2. In some cases the glyph form for a character in a particular source is different from the usual glyph form for
+	that character when used as a component in other characters for the same source. For example the K-form of U+4EA0 亠
+	has a dot above a horizontal stroke, whereas all occurrences of 亠 in K-source characters are written with a vertical
+	stroke attaching to a horizontal stroke (like the J-form of U+4EA0). In such cases, the IDS for the base character is
+	defined as normal, but an additional virtual glyph form is defined for the form of the character used as a component.
+	Thus U+4EA0 亠 is defined as ^⿱丶一$(GHTK) and ^⿱丨一$(J[K]), where the IDS for 'K' represents the K-source glyph for
+	U+4EA0, and the IDS for '[K]' represents the glyph form of U+4EA0 when used as a component in other K-source characters.
+	If a K-source character actually uses the dotted form of 亠 rather than the form of 亠 with a vertical line, then the
+	IDS gives the decomposed form of 亠 (i.e. ⿱丶一).
+
+10. Notes
+Some characters have notes headed by an asterisk (*) after the final IDS sequence.
+
+Where the glyph forms for two different characters are the same, a cross-reference is given in the form
+	"U+xxxx=U+xxxx" if all source forms of both characters are the same (e.g. U+5AB2=U+2180C). If only a particular source
+	form of the character is the same then the source identifier is put in parentheses (e.g. U+5098(V)=U+20302 or
+	U+23CEB(T)=U+23D6D(G)).
+
+Where the glyph forms for two characters are identical or nearly identical, but are not cognate (i.e. deliberately not
+	unified) then a cross-reference is given in the form "U+xxxx≠U+xxxx" (e.g. U+670C≠U+80A6). This mostly affects
+	characters with meat radical (⺼) compared with moon radical (月) which are written identically for some regions.
+
+Where two characters are unifiable variants then a cross-reference is given in the form "U+xxxx≡U+xxxx"
+	(e.g. U+6416≡U+6447). This affects some characters in the URO which were encoded due to the source separation rule,
+	some characters in the CJK extensions which were accidentally not unified, and some characters for which a unification
+	 rule was defined at a later date.
