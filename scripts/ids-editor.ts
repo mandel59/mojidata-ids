@@ -833,6 +833,43 @@ function renderHtml() {
     let searchTimer = null;
     let searchToken = 0;
     let searchTruncated = false;
+    let codepointToIndex = new Map();
+
+    function setUrlSelection(filePath, codepoint){
+      const fp = String(filePath ?? '');
+      const cp = String(codepoint ?? '');
+      if(!fp || !cp) return;
+      const p = new URLSearchParams();
+      p.set('file', fp);
+      p.set('cp', cp);
+      const next = '#' + p.toString();
+      if(location.hash !== next) history.replaceState(null, '', next);
+    }
+
+    function clearUrlSelection(){
+      if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+    }
+
+    function getUrlSelection(){
+      const h = (location.hash || '').replace(/^#/, '');
+      if(!h) return null;
+      const p = new URLSearchParams(h);
+      const file = p.get('file');
+      const cp = p.get('cp');
+      if(!file || !cp) return null;
+      return { file, cp };
+    }
+
+    async function tryRestoreSelectionFromUrl(filePath){
+      const sel = getUrlSelection();
+      if(!sel) return;
+      if(sel.file !== filePath){
+        clearUrlSelection();
+        return;
+      }
+      const idx = codepointToIndex.get(sel.cp);
+      if(typeof idx === 'number') await openRecord(idx);
+    }
 
     const sidebarWidthKey = 'ids-editor:sidebarWidthPx';
     const ziWidthKey = 'ids-editor:ziWidthPx';
@@ -1097,6 +1134,7 @@ function renderHtml() {
       activePos = posByIndex.get(index) ?? null;
       elCurIndex.textContent = \`#\${index}\`;
       elCurCode.textContent = summaries[index]?.codepoint ?? '—';
+      if(typeof activePos === 'number') ensurePosVisible(activePos);
       renderVisibleRows();
 
       setStatus('neutral', 'Loading...');
@@ -1118,6 +1156,9 @@ function renderHtml() {
         elOpenZi.disabled = false;
         if(elZiPanel.style.display !== 'none'){
           openZiForActive();
+        }
+        if(meta?.filePath && activeRecord?.codepoint){
+          setUrlSelection(meta.filePath, activeRecord.codepoint);
         }
       } catch (e){
         setStatus('warn', String(e?.message ?? e));
@@ -1476,12 +1517,19 @@ function renderHtml() {
         await apiPost('/api/autosave', {enabled: elAutoSave.checked});
       } catch {}
 
+      await pollMeta();
+
       const data = await apiGet('/api/records');
       summaries = data.records || [];
       filtered = summaries.map((_,i)=>i);
       posByIndex = new Map();
+      codepointToIndex = new Map();
       for(let pos=0; pos<filtered.length; pos++){
         posByIndex.set(filtered[pos], pos);
+      }
+      for(let i=0;i<summaries.length;i++){
+        const cp = summaries[i]?.codepoint;
+        if(typeof cp === 'string' && cp) codepointToIndex.set(cp, i);
       }
       elCount.textContent = \`\${filtered.length} / \${summaries.length}\`;
       refreshList(true);
@@ -1494,7 +1542,9 @@ function renderHtml() {
       const zw = parseInt(localStorage.getItem(ziWidthKey) ?? '', 10);
       if(Number.isFinite(zw)) applyZiWidthPx(zw);
 
-      await pollMeta();
+      if(meta?.filePath){
+        await tryRestoreSelectionFromUrl(meta.filePath);
+      }
       if(metaPollTimer) clearInterval(metaPollTimer);
       metaPollTimer = setInterval(pollMeta, 1200);
     }
