@@ -745,17 +745,16 @@ function renderHtml() {
                 <div class="value" id="charBox"><div class="bigchar" id="char"></div></div>
               </div>
 
-              <div class="section-title">IDS + Source</div>
-              <table>
-                <thead>
-                  <tr><th style="width:60%">IDS</th><th style="width:30%">Source</th><th style="width:10%"></th></tr>
-                </thead>
-                <tbody id="dataRows"></tbody>
-              </table>
-              <div style="display:flex; gap:10px; margin-top:10px">
-                <button id="addRow">Add row</button>
-                <button class="danger" id="clearRows">Clear</button>
-              </div>
+            <div class="section-title">IDS + Source</div>
+            <table>
+              <thead>
+                <tr><th style="width:60%">IDS</th><th style="width:30%">Source</th><th style="width:10%"></th></tr>
+              </thead>
+              <tbody id="dataRows"></tbody>
+            </table>
+            <div style="display:flex; gap:10px; margin-top:10px">
+              <button class="danger" id="clearRows">Clear</button>
+            </div>
 
               <div class="section-title">Comment</div>
               <textarea id="comment" placeholder="(optional)"></textarea>
@@ -808,7 +807,6 @@ function renderHtml() {
     const elCharBox = qs('#charBox');
     const elChar = qs('#char');
     const elDataRows = qs('#dataRows');
-    const elAddRow = qs('#addRow');
     const elClearRows = qs('#clearRows');
     const elComment = qs('#comment');
     const elCommentErr = qs('#commentErr');
@@ -823,6 +821,7 @@ function renderHtml() {
     let activeServerErrors = [];
     const pendingServerIssues = new Map();
     const draftByIndex = new Map();
+    const newRowDraftByIndex = new Map();
     const updateTimerByIndex = new Map();
     let openToken = 0;
     let lastSavedAtMs = null;
@@ -834,6 +833,7 @@ function renderHtml() {
     let searchToken = 0;
     let searchTruncated = false;
     let codepointToIndex = new Map();
+    let newRowDraft = { ids: '', source: '' };
 
     function setUrlSelection(filePath, codepoint){
       const fp = String(filePath ?? '');
@@ -1127,6 +1127,7 @@ function renderHtml() {
       // Stash current record even if invalid / not sent to server yet.
       if(activeIndex != null && activeRecord){
         try{ draftByIndex.set(activeIndex, structuredClone(activeRecord)); } catch { draftByIndex.set(activeIndex, JSON.parse(JSON.stringify(activeRecord))); }
+        newRowDraftByIndex.set(activeIndex, { ids: String(newRowDraft?.ids ?? ''), source: String(newRowDraft?.source ?? '') });
       }
 
       const myToken = ++openToken;
@@ -1148,6 +1149,7 @@ function renderHtml() {
           activeRecord = structuredClone(data.record);
         }
 
+        newRowDraft = newRowDraftByIndex.get(index) ?? { ids: '', source: '' };
         activeServerErrors = pendingServerIssues.get(index) ?? [];
         pendingServerIssues.delete(index);
         activeErrors = validateRecord(activeRecord);
@@ -1190,8 +1192,51 @@ function renderHtml() {
       elChar.textContent = activeRecord.char;
 
       elDataRows.replaceChildren();
-      for(let i=0;i<activeRecord.data.length;i++){
-        const d = activeRecord.data[i];
+      let pendingNewRowActivation = null;
+
+      const activateNewRowInPlace = (tr) => {
+        if(activeIndex == null || !activeRecord) return;
+        if(tr?.dataset?.rowIndex !== 'new') return;
+
+        const ids = String(newRowDraft?.ids ?? '');
+        const source = String(newRowDraft?.source ?? '');
+        const rowIndex = activeRecord.data.length;
+
+        activeRecord.data.push({ ids, source });
+
+        // Convert this row into a normal row (without recreating inputs; important for IME).
+        tr.dataset.rowIndex = String(rowIndex);
+        const inIds = tr._inIds;
+        const inSrc = tr._inSrc;
+        if(inIds) inIds.dataset.errKey = 'data['+rowIndex+'].ids';
+        if(inSrc) inSrc.dataset.errKey = 'data['+rowIndex+'].source';
+
+        const tdAct = tr.querySelector('td:nth-child(3)');
+        if(tdAct){
+          const btnDel = document.createElement('button');
+          btnDel.className = 'danger';
+          btnDel.textContent = 'Del';
+          btnDel.addEventListener('click', () => {
+            const idx = Number(tr.dataset.rowIndex);
+            if(!Number.isFinite(idx) || idx < 0) return;
+            activeRecord.data.splice(idx, 1);
+            scheduleUpdate();
+            renderEditor();
+            rerenderErrorsOnly();
+          });
+          tdAct.replaceChildren(btnDel);
+        }
+
+        newRowDraft = { ids: '', source: '' };
+        newRowDraftByIndex.set(activeIndex, { ids: '', source: '' });
+
+        // Append a fresh empty row at the bottom.
+        addDataRow(activeRecord.data.length, newRowDraft, true);
+        scheduleUpdate();
+        rerenderErrorsOnly();
+      };
+
+      const addDataRow = (rowIndex, d, isNew) => {
         const tr = document.createElement('tr');
         const tdIds = document.createElement('td');
         const tdSrc = document.createElement('td');
@@ -1200,52 +1245,133 @@ function renderHtml() {
         const inIds = document.createElement('input');
         inIds.className = 'text';
         inIds.value = d.ids ?? '';
-        inIds.addEventListener('input', () => {
-          activeRecord.data[i].ids = inIds.value;
-          scheduleUpdate();
-          rerenderErrorsOnly();
+        inIds.addEventListener('compositionend', () => {
+          if(tr.dataset.rowIndex !== 'new') return;
+          newRowDraft.ids = inIds.value;
+          newRowDraftByIndex.set(activeIndex, { ids: String(newRowDraft.ids ?? ''), source: String(newRowDraft.source ?? '') });
+          const nowEmpty = String(newRowDraft?.ids ?? '') === '' && String(newRowDraft?.source ?? '') === '';
+          if(nowEmpty){
+            if(pendingNewRowActivation?.input === inIds) pendingNewRowActivation = null;
+            rerenderErrorsOnly();
+            return;
+          }
+          if(pendingNewRowActivation?.input !== inIds) return;
+          pendingNewRowActivation = null;
+          activateNewRowInPlace(tr);
+        });
+        inIds.addEventListener('input', (ev) => {
+          const key = tr.dataset.rowIndex;
+          if(key === 'new'){
+            const wasEmpty = String(newRowDraft?.ids ?? '') === '' && String(newRowDraft?.source ?? '') === '';
+            newRowDraft.ids = inIds.value;
+            newRowDraftByIndex.set(activeIndex, { ids: String(newRowDraft.ids ?? ''), source: String(newRowDraft.source ?? '') });
+            const nowEmpty = String(newRowDraft?.ids ?? '') === '' && String(newRowDraft?.source ?? '') === '';
+            if(nowEmpty && pendingNewRowActivation?.input === inIds) pendingNewRowActivation = null;
+            if(wasEmpty && !nowEmpty){
+              if(ev?.isComposing){
+                pendingNewRowActivation = { input: inIds };
+              } else {
+                pendingNewRowActivation = null;
+                activateNewRowInPlace(tr);
+              }
+              return;
+            }
+            rerenderErrorsOnly();
+          } else {
+            const idx = Number(key);
+            if(!Number.isFinite(idx) || idx < 0) return;
+            if(!activeRecord.data[idx]) return;
+            activeRecord.data[idx].ids = inIds.value;
+            scheduleUpdate();
+            rerenderErrorsOnly();
+          }
         });
 
         const inSrc = document.createElement('input');
         inSrc.className = 'text';
         inSrc.value = d.source ?? '';
-        inSrc.addEventListener('input', () => {
-          activeRecord.data[i].source = inSrc.value;
-          scheduleUpdate();
-          rerenderErrorsOnly();
+        inSrc.addEventListener('compositionend', () => {
+          if(tr.dataset.rowIndex !== 'new') return;
+          newRowDraft.source = inSrc.value;
+          newRowDraftByIndex.set(activeIndex, { ids: String(newRowDraft.ids ?? ''), source: String(newRowDraft.source ?? '') });
+          const nowEmpty = String(newRowDraft?.ids ?? '') === '' && String(newRowDraft?.source ?? '') === '';
+          if(nowEmpty){
+            if(pendingNewRowActivation?.input === inSrc) pendingNewRowActivation = null;
+            rerenderErrorsOnly();
+            return;
+          }
+          if(pendingNewRowActivation?.input !== inSrc) return;
+          pendingNewRowActivation = null;
+          activateNewRowInPlace(tr);
+        });
+        inSrc.addEventListener('input', (ev) => {
+          const key = tr.dataset.rowIndex;
+          if(key === 'new'){
+            const wasEmpty = String(newRowDraft?.ids ?? '') === '' && String(newRowDraft?.source ?? '') === '';
+            newRowDraft.source = inSrc.value;
+            newRowDraftByIndex.set(activeIndex, { ids: String(newRowDraft.ids ?? ''), source: String(newRowDraft.source ?? '') });
+            const nowEmpty = String(newRowDraft?.ids ?? '') === '' && String(newRowDraft?.source ?? '') === '';
+            if(nowEmpty && pendingNewRowActivation?.input === inSrc) pendingNewRowActivation = null;
+            if(wasEmpty && !nowEmpty){
+              if(ev?.isComposing){
+                pendingNewRowActivation = { input: inSrc };
+              } else {
+                pendingNewRowActivation = null;
+                activateNewRowInPlace(tr);
+              }
+              return;
+            }
+            rerenderErrorsOnly();
+          } else {
+            const idx = Number(key);
+            if(!Number.isFinite(idx) || idx < 0) return;
+            if(!activeRecord.data[idx]) return;
+            activeRecord.data[idx].source = inSrc.value;
+            scheduleUpdate();
+            rerenderErrorsOnly();
+          }
         });
 
-        const btnDel = document.createElement('button');
-        btnDel.className = 'danger';
-        btnDel.textContent = 'Del';
-        btnDel.addEventListener('click', () => {
-          activeRecord.data.splice(i, 1);
-          scheduleUpdate();
-          renderEditor();
-          rerenderErrorsOnly();
-        });
+        if(!isNew){
+          const btnDel = document.createElement('button');
+          btnDel.className = 'danger';
+          btnDel.textContent = 'Del';
+          btnDel.addEventListener('click', () => {
+            const idx = Number(tr.dataset.rowIndex);
+            if(!Number.isFinite(idx) || idx < 0) return;
+            activeRecord.data.splice(idx, 1);
+            scheduleUpdate();
+            renderEditor();
+            rerenderErrorsOnly();
+          });
+          tdAct.appendChild(btnDel);
+        }
 
         tdIds.appendChild(inIds);
         tdSrc.appendChild(inSrc);
-        tdAct.appendChild(btnDel);
         tr.appendChild(tdIds);
         tr.appendChild(tdSrc);
         tr.appendChild(tdAct);
 
-        const errRow = document.createElement('div');
-        errRow.className = 'errtext';
-        errRow.style.display = 'none';
-
         // Keep a pointer for error updates
-        inIds.dataset.errKey = 'data['+i+'].ids';
-        inSrc.dataset.errKey = 'data['+i+'].source';
-        tr.dataset.rowIndex = String(i);
+        if(isNew){
+          tr.dataset.rowIndex = 'new';
+        } else {
+          inIds.dataset.errKey = 'data['+rowIndex+'].ids';
+          inSrc.dataset.errKey = 'data['+rowIndex+'].source';
+          tr.dataset.rowIndex = String(rowIndex);
+        }
         tr._inIds = inIds;
         tr._inSrc = inSrc;
-        tr._errRow = errRow;
 
         elDataRows.appendChild(tr);
+      };
+
+      for(let i=0;i<activeRecord.data.length;i++){
+        addDataRow(i, activeRecord.data[i], false);
       }
+      // Always show a blank row at the end for adding a new entry.
+      addDataRow(activeRecord.data.length, newRowDraft ?? { ids:'', source:'' }, true);
 
       elComment.value = activeRecord.comment ?? '';
       elComment.oninput = () => {
@@ -1262,14 +1388,10 @@ function renderHtml() {
         rerenderErrorsOnly();
       };
 
-      elAddRow.onclick = () => {
-        activeRecord.data.push({ids:'', source:''});
-        scheduleUpdate();
-        renderEditor();
-        rerenderErrorsOnly();
-      };
       elClearRows.onclick = () => {
         activeRecord.data = [];
+        newRowDraft = { ids:'', source:'' };
+        newRowDraftByIndex.set(activeIndex, { ids:'', source:'' });
         scheduleUpdate();
         renderEditor();
         rerenderErrorsOnly();
@@ -1285,6 +1407,26 @@ function renderHtml() {
       for(const e of activeErrors) errMap.set(e.path, e.message);
       for(const e of (activeServerErrors ?? [])) errMap.set(e.path, e.message);
 
+      // Draft new row validation (UI-only row at the bottom)
+      const draft = newRowDraft ?? { ids:'', source:'' };
+      const draftIds = String(draft.ids ?? '');
+      const draftSrc = String(draft.source ?? '');
+      const draftTouched = draftIds.trim() !== '' || draftSrc.trim() !== '';
+      let draftIdsMsg = null;
+      let draftSrcMsg = null;
+      if(draftTouched){
+        if(draftIds.trim() === '') draftIdsMsg = 'IDS must not be empty.';
+        else {
+          const r = validateIdsExpression(draftIds);
+          if(!r.ok) draftIdsMsg = r.issues?.[0]?.message ?? 'Invalid IDS.';
+        }
+        if(draftSrc.trim() === '') draftSrcMsg = 'Source must not be empty.';
+        else {
+          const r = validateSourceTag(draftSrc);
+          if(!r.ok) draftSrcMsg = r.issues?.[0]?.message ?? 'Invalid source.';
+        }
+      }
+
       const codeMsg = errMap.get('codepoint');
       elCodepoint.classList.toggle('error', !!codeMsg);
       elCodepoint.title = codeMsg || '';
@@ -1295,11 +1437,20 @@ function renderHtml() {
 
       // data rows
       for(const tr of elDataRows.querySelectorAll('tr')){
-        const i = Number(tr.dataset.rowIndex);
+        const key = tr.dataset.rowIndex;
         const inIds = tr._inIds;
         const inSrc = tr._inSrc;
-        const msgIds = errMap.get('data['+i+'].ids');
-        const msgSrc = errMap.get('data['+i+'].source');
+        if(!inIds || !inSrc) continue;
+        let msgIds = null;
+        let msgSrc = null;
+        if(key === 'new'){
+          msgIds = draftIdsMsg;
+          msgSrc = draftSrcMsg;
+        } else {
+          const i = Number(key);
+          msgIds = errMap.get('data['+i+'].ids');
+          msgSrc = errMap.get('data['+i+'].source');
+        }
         inIds.classList.toggle('error', !!msgIds);
         inSrc.classList.toggle('error', !!msgSrc);
         const anyMsg = msgIds || msgSrc;
@@ -1462,13 +1613,54 @@ function renderHtml() {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onUp);
     });
-    elSplitZiV.addEventListener('dblclick', () => {
-      localStorage.removeItem(ziWidthKey);
-      document.documentElement.style.removeProperty('--zi-w');
-    });
-    elList.addEventListener('keydown', (ev) => {
-      const key = ev.key;
-      if(filtered.length === 0) return;
+	    elSplitZiV.addEventListener('dblclick', () => {
+	      localStorage.removeItem(ziWidthKey);
+	      document.documentElement.style.removeProperty('--zi-w');
+	    });
+		    function focusFirstIdsField(){
+		      const input = elDataRows.querySelector('tr td:first-child input.text');
+		      if(input){
+		        input.focus();
+		        try{ input.select?.(); } catch {}
+		      }
+		    }
+
+		    document.addEventListener('keydown', async (ev) => {
+		      // Record switching while editing fields:
+		      // - Cmd+Enter: next record
+		      // - Cmd+Shift+Enter: previous record
+		      if(ev.isComposing) return;
+	      if(!ev.metaKey) return;
+	      if(ev.key !== 'Enter') return;
+	      if(ev.target === elFilter) return;
+	      const t = ev.target;
+	      const isEditorField =
+	        t === elComment ||
+	        (t instanceof HTMLInputElement && t.classList.contains('text')) ||
+	        (t instanceof HTMLTextAreaElement && t.id === 'comment');
+	      if(!isEditorField) return;
+
+	      ev.preventDefault();
+	      ev.stopPropagation();
+
+	      if(filtered.length === 0) return;
+	      let nextPos = activePos;
+	      if(typeof nextPos !== 'number') nextPos = 0;
+	      nextPos = nextPos + (ev.shiftKey ? -1 : 1);
+	      nextPos = Math.max(0, Math.min(filtered.length - 1, nextPos));
+	      if(nextPos === activePos) return;
+		      activePos = nextPos;
+		      ensurePosVisible(nextPos);
+		      const idx = filtered[nextPos];
+		      if(idx != null){
+		        await openRecord(idx);
+		        // Move cursor to the first IDS field for quick consecutive edits.
+		        setTimeout(() => focusFirstIdsField(), 0);
+		      }
+		    }, { capture: true });
+	    elList.addEventListener('keydown', (ev) => {
+	      const key = ev.key;
+	      if(filtered.length === 0) return;
 
       const page = Math.max(1, Math.floor(elList.clientHeight / ROW_H) - 1);
       let nextPos = activePos;
