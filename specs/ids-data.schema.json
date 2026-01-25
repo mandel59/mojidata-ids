@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "IDS record",
+  "properties": {
+    "codepoint": { "type": "string" },
+    "char": { "type": "string" },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "string" },
+          "source": { "type": "string" }
+        },
+        "required": ["ids", "source"]
+      }
+    },
+    "comment": { "type": "string" }
+  },
+  "required": ["codepoint", "char", "data"],
+  "examples": [
+    {
+      "codepoint": "U+5CC0",
+      "char": "峀",
+      "data": [
+        { "ids": "⿱山由", "source": "GTKP" },
+        { "ids": "⿱山田", "source": "J" }
+      ],
+      "comment": "U+5CC0≠U+2B73A;U+5CC0(J)=U+2B73A"
+    }
+  ]
+}
