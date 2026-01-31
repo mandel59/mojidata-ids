@@ -210,6 +210,7 @@ function validateRecord(rec: IDSRecord): ValidationIssue[] {
         issues.push({ path: "char", message: "Char must not contain tabs/newlines." });
     }
 
+    const seenSources = new Map<string, number>();
     for (let i = 0; i < rec.data.length; i++) {
         const item = rec.data[i];
         if (item == null) continue;
@@ -220,7 +221,21 @@ function validateRecord(rec: IDSRecord): ValidationIssue[] {
         if (!idsRes.ok) issues.push({ path: `data[${i}].ids`, message: idsRes.issues[0]?.message ?? "Invalid IDS." });
 
         const srcRes = validateSourceTag(source);
-        if (!srcRes.ok) issues.push({ path: `data[${i}].source`, message: srcRes.issues[0]?.message ?? "Invalid source." });
+        if (!srcRes.ok) {
+            issues.push({ path: `data[${i}].source`, message: srcRes.issues[0]?.message ?? "Invalid source." });
+        } else {
+            if (source !== "X" && source !== "Z") {
+                const prev = seenSources.get(source);
+                if (prev != null) {
+                    issues.push({
+                        path: `data[${i}].source`,
+                        message: `Duplicate source '${source}' (already used at data[${prev}].source).`,
+                    });
+                } else {
+                    seenSources.set(source, i);
+                }
+            }
+        }
     }
 
     const comment = rec.comment ?? "";
@@ -987,6 +1002,7 @@ function renderHtml() {
 
 	    function validateRecord(rec){
 	      const issues = [];
+	      const seenSources = new Map();
 	      for(let i=0;i<rec.data.length;i++){
 	        const d = rec.data[i] || {ids:'',source:''};
 	        const ids = String(d.ids ?? '');
@@ -996,7 +1012,18 @@ function renderHtml() {
 	        if(!idsRes.ok) issues.push({path:\`data[\${i}].ids\`, message: idsRes.issues?.[0]?.message ?? 'Invalid IDS.'});
 
 	        const srcRes = validateSourceTag(src);
-	        if(!srcRes.ok) issues.push({path:\`data[\${i}].source\`, message: srcRes.issues?.[0]?.message ?? 'Invalid source.'});
+	        if(!srcRes.ok) {
+	          issues.push({path:\`data[\${i}].source\`, message: srcRes.issues?.[0]?.message ?? 'Invalid source.'});
+	        } else {
+	          if(src !== 'X' && src !== 'Z') {
+	            const prev = seenSources.get(src);
+	            if(prev != null) {
+	              issues.push({path:\`data[\${i}].source\`, message: \`Duplicate source '\${src}' (already used at data[\${prev}].source).\`});
+	            } else {
+	              seenSources.set(src, i);
+	            }
+	          }
+	        }
 	      }
 	      const c = String(rec.comment ?? '');
 	      if(/\\t/.test(c)) issues.push({path:'comment', message:'Comment must not contain tabs.'});

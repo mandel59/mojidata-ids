@@ -48,6 +48,7 @@ async function main() {
 
         let dataIndex = 0;
         let sawUnknown = false;
+        const seenSources = new Map<string, number>();
         recordCount++;
 
         for (const col of cols.slice(2)) {
@@ -74,6 +75,19 @@ async function main() {
                 if (!srcRes.ok) {
                     report(`data[${dataIndex}].source: ${srcRes.issues[0]?.message ?? "Invalid source."}`, ctx);
                     errorCount++;
+                } else {
+                    if (source !== "X" && source !== "Z") {
+                        const prev = seenSources.get(source);
+                        if (prev != null) {
+                            report(
+                                `data[${dataIndex}].source: Duplicate source '${source}' (already used at data[${prev}].source).`,
+                                ctx,
+                            );
+                            errorCount++;
+                        } else {
+                            seenSources.set(source, dataIndex);
+                        }
+                    }
                 }
                 dataIndex++;
                 continue;
