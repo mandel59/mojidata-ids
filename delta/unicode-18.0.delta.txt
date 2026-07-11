@@ -1,0 +1,13 @@
+# Character Additions
+CJK Unified Ideographs Extension D	2B81E
+# Disunifications
+CJK Unified Ideographs	6B25, 980B
+CJK Unified Ideographs Extension F	2EA07
+# Glyph, Variation Sequence, and Name Alias Changes
+CJK Unified Ideographs Extension A	35E9, 3862, 43DE, 4BCE
+CJK Unified Ideographs Extension B	20089, 201A2, 20457, 20B24, 211AE, 2148D, 21502, 21636, 22843, 23326, 237E5, 246C9, 248E9, 25A2B, 2669C, 27FB7, 29167, 296B1, 2976E
+CJK Unified Ideographs Extension C	2A8D8, 2A917, 2AA90, 2ADB8, 2AE12, 2B058
+CJK Unified Ideographs Extension E	2B876, 2B8A0
+CJK Unified Ideographs Extension F	2DB7C, 2EA07
+CJK Unified Ideographs Extension G	30D12, 312E7
+CJK Unified Ideographs Extension H	31F00, 31F1A
